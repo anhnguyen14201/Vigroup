@@ -21,7 +21,7 @@ export const signUpValidator = Joi.object({
     'string.email': 'Email không đúng định dạng',
   }),
   password: Joi.string().required().min(6).max(255).messages({
-    'string.empty': 'password không được để trống',
+    'string.empty': 'Password không được để trống',
     'any.required': 'password là bắt buộc',
     'string.min': ' password có ít nhất {#litmit} ký tự',
     'string.max': ' password có ít hơn {#litmit + 1} ký tự',

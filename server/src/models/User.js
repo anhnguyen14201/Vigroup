@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
 
+    registerToken: {
+      type: String,
+    },
+
     passwordChangedAt: {
       type: String,
     },

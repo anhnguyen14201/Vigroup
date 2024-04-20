@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler'
 import bcryptjs from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+//import makeToken from 'uniqueid'
 import crypto from 'crypto'
 import { signInValidator, signUpValidator } from '../validations/userValidation'
 import User from '../models/User'
@@ -16,7 +17,7 @@ export const signUp = asyncHandler(async (req, res) => {
   // Kiểm tra xác nhận dữ liệu người dùng nhập vào
   const { error } = signUpValidator.validate(req.body, { abortEarly: false })
 
-  if (error) throw new Error(error)
+  if (error) throw new Error(error.message).message
 
   // Kiểm tra email đã tồn tại chưa
   const emailExist = await User.findOne({ email: req.body.email })
@@ -41,26 +42,69 @@ export const signUp = asyncHandler(async (req, res) => {
   })
 })
 
-// Login
+//* Register
+
+/* export const signUp = asyncHandler(async (req, res) => {
+  // Lấy email từ client gửi lên
+  const email = req.body.email
+
+  const { error } = signUpValidator.validate(req.body, { abortEarly: false })
+
+  if (error) throw new Error(error)
+
+  const token = makeToken()
+
+  res.cookie(
+    'dataregister',
+    { ...req.body, token },
+    {
+      httpOnly: true,
+      maxAge: 15 * 60 * 1000,
+    },
+  )
+
+  const html = `
+  Hi [name],
+  Thanks for getting started with our [customer portal]!
+  
+  We need a little more information to complete your registration, including a confirmation of your email address.
+  
+  Click below to confirm your email address:
+  
+  <a href=${process.env.URL_SERVER}/api/user/final-register/${token}> Click here</a> 
+    `
+  await sendEmail({ email, html, subject: 'Hoàn tất đăng ký Digital World' })
+
+  return res.json({
+    success: true,
+    message: 'Please check your email to active account',
+  })
+})
+
+export const finalRegister = asyncHandler(async () => {
+  const cookie = req.cookies
+
+  return res.json({
+    success: true,
+    cookie,
+  })
+}) */
+//* Login
 export const signIn = asyncHandler(async (req, res) => {
   // Validate data từ phía client
   const { error } = signInValidator.validate(req.body, { abortEarly: false })
-  if (error) {
-    return res.status(200).json({
-      success: false,
-      message: error.message,
-    })
-  }
+
+  if (error) throw new Error(error).message
 
   // Kiểm tra email có tồn tại không
   const user = await User.findOne({ email: req.body.email })
 
-  if (!user) throw new Error(error)
+  if (!user) throw new Error(error).message
 
   // Kiểm tra password
   const isMatch = await bcryptjs.compare(req.body.password, user.password)
 
-  if (!isMatch) throw new Error(error)
+  if (!isMatch) throw new Error('Mật khẩu không đúng').message
 
   // Tạo JWT
   // Tạo access token
@@ -91,7 +135,7 @@ export const signIn = asyncHandler(async (req, res) => {
   })
 })
 
-// Forgot password
+//* Forgot password
 export const forgotPassword = asyncHandler(async (req, res) => {
   // Lấy email từ client gửi lên
   const { email } = req.query
@@ -124,6 +168,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const data = {
     email,
     html,
+    subject: 'Forgot password',
   }
 
   const rs = await sendEmail(data)
@@ -134,7 +179,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   })
 })
 
-// Reset password
+//* Reset password
 export const resetPassword = asyncHandler(async (req, res) => {
   const { password, token } = req.body
   if (!password || !token) throw new Error('Missing input')
@@ -156,7 +201,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   // Cập nhật thông tin mật khẩu mới cho user
   user.password = hashedPassword
   user.passwordResetToken = undefined
-  user.passwordChangeAt = Date.now()
+  user.passwordChangedAt = Date.now()
   user.passwordResetExpires = undefined
 
   // Lưu lại thông tin user
@@ -167,7 +212,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   })
 })
 
-// Cấp mới token
+//* Cấp mới token
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   // Lấy token từ cookie
   const cookie = req.cookies
@@ -194,7 +239,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   })
 })
 
-// Logout
+//* Logout
 export const logOut = asyncHandler(async (req, res) => {
   // Lấy token từ cookies
   const cookie = req.cookies
@@ -219,7 +264,7 @@ export const logOut = asyncHandler(async (req, res) => {
   })
 })
 
-// Get data of all users
+//* Get data of all users
 export const getUsers = asyncHandler(async (req, res) => {
   const users = await User.find({})
 
@@ -229,7 +274,7 @@ export const getUsers = asyncHandler(async (req, res) => {
   })
 })
 
-// Get data of a user
+//* Get data of a user
 export const getUser = asyncHandler(async (req, res) => {
   console.log(req)
   const { _id } = req.user
@@ -242,7 +287,7 @@ export const getUser = asyncHandler(async (req, res) => {
   })
 })
 
-// Update user
+//* Update user
 export const updateUser = asyncHandler(async (req, res) => {
   const { _id } = req.user
   if (!_id || Object.keys(req.body).length === 0)
@@ -256,7 +301,7 @@ export const updateUser = asyncHandler(async (req, res) => {
   })
 })
 
-// Update by admin
+//* Update by admin
 export const updateByAdmin = asyncHandler(async (req, res) => {
   const { _id } = req.params
 
@@ -270,7 +315,7 @@ export const updateByAdmin = asyncHandler(async (req, res) => {
   })
 })
 
-// Delete User
+//* Delete User
 export const removeUser = asyncHandler(async (req, res) => {
   const { _id } = req.query
 
@@ -284,7 +329,7 @@ export const removeUser = asyncHandler(async (req, res) => {
   })
 })
 
-//
+//* Update giỏ hàng
 export const updateCart = asyncHandler(async (req, res) => {
   const userID = req.user
   const { _id, quantity } = req.body

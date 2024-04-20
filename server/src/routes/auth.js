@@ -1,5 +1,6 @@
 import express from 'express'
 import {
+  //finalRegister,
   forgotPassword,
   getUser,
   getUsers,
@@ -17,6 +18,7 @@ import { checkPermission, isAdmin } from '../middlewares/checkPermission'
 const routerAuth = express.Router()
 
 routerAuth.post('/signup', signUp)
+//routerAuth.get('/final-register/:token', finalRegister)
 routerAuth.post('/signin', signIn)
 routerAuth.post('/refresh', refreshAccessToken)
 
